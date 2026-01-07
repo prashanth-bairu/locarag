@@ -10,5 +10,6 @@ Path(settings.data_path).mkdir(parents=True, exist_ok=True)
 async def upload(file: UploadFile = File(...)) -> dict:
     destination = Path(settings.data_path) / file.filename
     with destination.open("wb") as output:
-        output.write(await file.read())
+        contents = await file.read()
+    output.write(contents)
     return {"message": "uploaded", "filename": file.filename, "chunks_indexed": 0}
