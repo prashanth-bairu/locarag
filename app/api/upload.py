@@ -13,4 +13,6 @@ async def upload(file: UploadFile = File(...)) -> dict:
     with destination.open("wb") as output:
         contents = await file.read()
     output.write(contents)
-    return {"message": "uploaded", "filename": safe_name, "chunks_indexed": 0}
+    from app.services.ingestion_service import load_pdf
+    docs = load_pdf(str(destination))
+    return {"message": "uploaded", "filename": safe_name, "chunks_indexed": len(docs)}
