@@ -17,3 +17,13 @@ def chunk_pdf(file_path: str):
 
 def count_empty_chunks(chunks):
     return sum(1 for chunk in chunks if not getattr(chunk, "page_content", "").strip())
+
+
+from app.db.vector_store import get_vector_store
+
+
+def ingest_pdf(file_path: str) -> int:
+    chunks = chunk_pdf(file_path)
+    db = get_vector_store()
+    db.add_documents(chunks)
+    return len(chunks)
