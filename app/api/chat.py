@@ -1,5 +1,6 @@
 import time
 from fastapi import APIRouter, Query
+
 from app.rag.pipeline import RAGPipeline
 
 router = APIRouter()
