@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.get("/")
-def chat(query: str = Query(..., min_length=1), session_id: str = "default") -> dict:
+def chat(query: str = Query(..., min_length=1), session_id: str = Query("default", min_length=1)) -> dict:
     start = time.perf_counter()
     pipeline = RAGPipeline(memory=get_memory(session_id))
     result = pipeline.run(query)
