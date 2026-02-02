@@ -24,6 +24,6 @@ from app.db.vector_store import get_vector_store
 
 def ingest_pdf(file_path: str) -> int:
     chunks = chunk_pdf(file_path)
-    db = get_vector_store()
-    db.add_documents(chunks)
+    vector_store = get_vector_store()
+    vector_store.add_documents(chunks)
     return len(chunks)
