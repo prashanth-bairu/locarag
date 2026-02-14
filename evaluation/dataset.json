@@ -1,0 +1,8 @@
+[
+  {
+    "question": "What is the main topic of the document?",
+    "ground_truth": "The answer depends on the uploaded document.",
+    "contexts": ["Sample context placeholder"],
+    "answer": "Sample answer placeholder"
+  }
+]
