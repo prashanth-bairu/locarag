@@ -1,75 +1,92 @@
-# RAG GenAI System
+# locaRAG
 
-A GitHub-ready, local-first RAG application for GenAI role portfolios.
+A fully local Retrieval-Augmented Generation (RAG) system that lets you chat with your own documents — no cloud, no API keys, no data leaving your machine.
+
+Built for personal use: load any PDF, ask questions in plain English, and get grounded answers backed by your documents with conversation memory across sessions.
+
+---
 
 ## Features
-- Local LLM inference with Ollama
-- Local embeddings with Ollama (`nomic-embed-text`)
-- PDF ingestion and chunking
-- Chroma vector store for retrieval
-- Redis-backed session memory
-- FastAPI service layer with modular architecture
-- Evaluation script using Ragas
-- Basic tests with pytest
-- Docker and docker-compose support
-- Logging and latency tracking
+
+- **Fully local** — LLM inference and embeddings run entirely on your machine via Ollama
+- **PDF ingestion** — upload documents, they get chunked and indexed automatically
+- **Semantic retrieval** — Chroma vector store finds the most relevant passages per query
+- **Conversation memory** — Redis-backed session history so context carries across questions
+- **Source transparency** — responses include the actual document chunks used to generate answers
+- **Evaluation** — a Ragas-powered evaluator to measure retrieval and answer quality
+- **Docker support** — spin up the full stack with one command
+
+---
 
 ## Architecture
+
 ```text
-Client -> FastAPI -> ChatService -> RAGPipeline
-                           |          |\
-                           |          | -> Ollama LLM
-                           |          | -> Retriever -> Chroma
-                           |          \
-                           |           -> Redis memory
-                           \
-                            -> IngestionService -> PDF Loader -> Chunker -> Chroma
+Client → FastAPI → RAGPipeline
+                       |
+                       ├── Ollama LLM (llama3)
+                       ├── Retriever → Chroma vector store
+                       └── Redis session history
+
+Upload → IngestionService → PDF Loader → Chunker → Chroma
 ```
+
+---
 
 ## Project Structure
+
 ```text
 app/
-  api/        # routes
-  core/       # config + logging
-  db/         # Chroma + Redis clients
-  models/     # Pydantic schemas
-  rag/        # prompts + pipeline + chunking
-  services/   # chat/ingestion/retrieval/llm/memory
-evaluation/   # ragas dataset + evaluator
-scripts/      # helper scripts
-tests/        # basic tests
+  api/          # FastAPI routes (chat, upload, health)
+  core/         # config and logging
+  db/           # Chroma and Redis clients
+  models/       # Pydantic schemas
+  rag/          # prompts, pipeline, chunking logic
+  services/     # chat, ingestion, retrieval, LLM, memory
+evaluation/     # Ragas dataset and evaluator script
+scripts/        # helper utilities
+tests/          # pytest tests
 ```
+
+---
 
 ## Quick Start
-### 1) Create a virtual environment
+
+### 1. Create a virtual environment
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 ```
 
-### 2) Install Python dependencies
+### 2. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3) Start local dependencies
+### 3. Pull models and start local services
+
 ```bash
-# Ollama models
+# Pull LLM and embedding model
 ollama pull llama3
 ollama pull nomic-embed-text
 
-# Redis
+# Start Redis
 redis-server
 ```
 
-### 4) Run the API
+### 4. Run the API
+
 ```bash
 uvicorn main:app --reload
 ```
 
-Open the docs at `http://127.0.0.1:8000/docs`
+Swagger UI available at `http://127.0.0.1:8000/docs`
+
+---
 
 ## API Usage
+
 ### Health check
 ```bash
 curl http://127.0.0.1:8000/health
@@ -78,31 +95,50 @@ curl http://127.0.0.1:8000/health
 ### Upload a PDF
 ```bash
 curl -X POST http://127.0.0.1:8000/upload/ \
-  -F "file=@/absolute/path/to/your.pdf"
+  -F "file=@/path/to/your.pdf"
 ```
 
 ### Ask a question
 ```bash
-curl "http://127.0.0.1:8000/chat/?query=What%20is%20this%20document%20about%3F&session_id=demo-user"
+curl "http://127.0.0.1:8000/chat/?query=What+is+this+document+about&session_id=my-session"
 ```
 
+Response includes `answer` and `contexts` (the source chunks used).
+
+---
+
 ## Tests
+
 ```bash
 pytest -q
 ```
 
+---
+
 ## Evaluation
-1. Update `evaluation/dataset.json` with question, answer, contexts, and ground truth.
+
+1. Add your test cases to `evaluation/dataset.json` (question, answer, contexts, ground_truth).
 2. Run:
+
 ```bash
 python evaluation/evaluator.py
 ```
 
+Outputs faithfulness, answer relevancy, and context precision scores via Ragas.
+
+---
+
 ## Docker
+
 ```bash
 docker compose up --build
 ```
 
+---
+
 ## Notes
-- This project is designed to be fully local and offline after model download.
-- The final codebase is intentionally modular for interview discussion around architecture and extensibility.
+
+- Everything runs offline after the initial model download.
+- `session_id` query param isolates conversation history per user/session.
+- Chat history is stored in Redis with a 1-hour TTL; swap to a persistent store if needed.
+- Chroma persists to `chroma_db/` locally — delete it to reset the vector store.

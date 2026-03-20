@@ -1,10 +1,16 @@
-from langchain.memory import ConversationBufferMemory
-from app.db.redis_client import get_message_history
+from app.db.redis_client import get_redis_history
 
 
-def get_memory(session_id: str) -> ConversationBufferMemory:
-    return ConversationBufferMemory(
-        memory_key="chat_history",
-        chat_memory=get_message_history(session_id),
-        return_messages=True,
-    )
+def get_history(session_id: str):
+    return get_redis_history(session_id)
+
+
+def load_chat_history(session_id: str):
+    history = get_redis_history(session_id)
+    return history.messages
+
+
+def save_chat_turn(session_id: str, question: str, answer: str):
+    history = get_redis_history(session_id)
+    history.add_user_message(question)
+    history.add_ai_message(answer)

@@ -1,22 +1,30 @@
-import time
-from fastapi import APIRouter, Query
-
+from fastapi import APIRouter, HTTPException
+from app.services.llm_service import get_llm
+from app.services.retrieval_service import get_retriever
+from app.services.memory_service import load_chat_history, save_chat_turn
 from app.rag.pipeline import RAGPipeline
-from app.services.memory_service import get_memory
 
 router = APIRouter()
 
 
 @router.get("/")
-def chat(query: str = Query(..., min_length=1), session_id: str = Query("default", min_length=1)) -> dict:
-    start = time.perf_counter()
-    pipeline = RAGPipeline(memory=get_memory(session_id))
-    result = pipeline.run(query)
-    latency_ms = round((time.perf_counter() - start) * 1000, 2)
-    answer = result["answer"] or "I do not know based on the provided documents."
-    return {
-        "answer": answer,
-        "session_id": session_id,
-        "latency_ms": latency_ms,
-        "retrieved_chunks": result["retrieved_chunks"],
-    }
+def chat(query: str, session_id: str = "default"):
+    try:
+        llm = get_llm()
+        retriever = get_retriever()
+        chat_history = load_chat_history(session_id)
+
+        pipeline = RAGPipeline(llm, retriever)
+        result = pipeline.run(query, chat_history=chat_history)
+
+        answer = result.get("answer", "")
+        source_documents = result.get("source_documents", [])
+
+        save_chat_turn(session_id, query, answer)
+
+        return {
+            "answer": answer,
+            "contexts": [doc.page_content for doc in source_documents],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat failed: {type(e).__name__}: {e}")

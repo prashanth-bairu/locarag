@@ -1,22 +1,19 @@
 from langchain.chains import ConversationalRetrievalChain
-from app.services.llm_service import get_llm
-from app.services.retrieval_service import get_retriever
 
 
 class RAGPipeline:
-    def __init__(self, memory=None):
+    def __init__(self, llm, retriever):
         self.chain = ConversationalRetrievalChain.from_llm(
-            llm=get_llm(),
-            retriever=get_retriever(),
-            memory=memory,
+            llm=llm,
+            retriever=retriever,
             return_source_documents=True,
+            verbose=True,
         )
 
-    def run(self, query: str) -> dict:
-        result = self.chain.invoke({"question": query})
-        docs = result.get("source_documents", [])
-        return {
-            "answer": result["answer"],
-            "retrieved_chunks": len(docs),
-            "contexts": [doc.page_content for doc in docs],
-        }
+    def run(self, query: str, chat_history=None):
+        if chat_history is None:
+            chat_history = []
+        return self.chain.invoke({
+            "question": query,
+            "chat_history": chat_history,
+        })
